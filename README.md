@@ -79,6 +79,12 @@ Compaction uses `hc keys` instead of `hc send`: `send` wraps text as a message f
 
 Profiles come from `~/.claude/state/herdr-accounts.json` when present; otherwise only `~/.claude` is read.
 
+## Author
+
+<a href="https://www.linkedin.com/in/gabriel-mendonca-pereira/"><img src="https://github.com/gabriel-mend.png?size=200" width="100" alt="Gabriel Mendonça Pereira on LinkedIn"></a>
+
+**[Gabriel Mendonça Pereira](https://www.linkedin.com/in/gabriel-mendonca-pereira/)**
+
 ## License
 
 [MIT](LICENSE) © 2026 [Gabriel Mendonça Pereira](https://github.com/gabriel-mend) · [LinkedIn](https://www.linkedin.com/in/gabriel-mendonca-pereira/)
