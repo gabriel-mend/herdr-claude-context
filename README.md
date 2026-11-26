@@ -1,3 +1,5 @@
+<p align="center"><img src="logo.svg" width="120" alt="herdr-claude-context logo"></p>
+
 # herdr-claude-context
 
 A Herdr.app sidebar mod showing the **context-window usage of your Claude Code agents**.
