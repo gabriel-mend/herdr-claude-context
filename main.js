@@ -1,10 +1,23 @@
-import { View, div } from "gpui-kit";
+import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { agents, terminals, exec, hc, theme, appHome, checking, run } from "herdr";
+import { agents, terminals, exec, hc, theme, appHome, checking, run, layout, shared, setShared } from "herdr";
 
 const clean = (s) => (s || "").replace(/^[^A-Za-z0-9À-ÿ]+/, "").trim();
 const SPIN = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 const fmt = (n) => (n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n));
+
+// Minimizing shrinks this mod's own layout block down to its header.
+const MOD = "claude-context";
+const MINIMIZED = 42; // header height plus the top border
+function ownBlock(node) {
+  if (node?.content?.mod === MOD && !node.content.props?.badge) return node;
+  for (const child of node?.children ?? []) {
+    const found = ownBlock(child);
+    if (found) return found;
+  }
+  return null;
+}
+const isMinimized = (block) => block?.size?.px != null && block.size.px <= MINIMIZED;
 
 export default class ClaudeContext extends View {
   init(_props, cx) {
@@ -70,6 +83,29 @@ export default class ClaudeContext extends View {
       .catch(fail);
   }
 
+  toggleMinimized(cx) {
+    const block = ownBlock(layout());
+    if (!block) return;
+    if (isMinimized(block)) {
+      run("layout.resize", { id: block.id, ...(shared(MOD + ".size") ?? { weight: 1 }) });
+    } else {
+      setShared(MOD + ".size", block.size);
+      run("layout.resize", { id: block.id, px: MINIMIZED });
+    }
+    cx.notify();
+  }
+
+  // Chevron in the header; absent when the mod isn't a layout block (e.g. opened as an overlay).
+  minimizeButton(t) {
+    const block = ownBlock(layout());
+    const min = isMinimized(block);
+    return div().when(!!block, (el) => el.child(div().id("minimize").size(26).flex_none().flex().items_center().justify_center().rounded(6)
+      .text_color(t.dim).cursor_pointer().hover((st) => st.bg(t.hover).text_color(t.foreground))
+      .tooltip(min ? "Expand" : "Minimize")
+      .on_click((_e, cx) => this.toggleMinimized(cx))
+      .child(svg(`mods/workspace-chrome/chevron-${min ? "right" : "down"}.svg`).size(14))));
+  }
+
   render(cx) {
     const t = theme();
     const cwdOf = {};
@@ -105,9 +141,10 @@ export default class ClaudeContext extends View {
           .child(`${a.space_name}` + (s && s.used != null ? `  ·  ${fmt(s.used)} / ${fmt(s.window)}` : "")));
     });
     return v_flex().size_full().min_h(0).bg(t.chrome).border_t(1).border_color(t.border).text_size(13)
-      .child(h_flex().px(16).h(41).pt(14).pb(5).flex_none().items_center().justify_between()
-        .child(div().text_size(11.5).font_medium().text_color(t.dim).child("Context")))
-      .child(v_flex().id("ctx-list").flex_1().min_h(0).px(8).gap(2).overflow_y_scrollbar().children(rows))
+      .child(h_flex().px(16).pr(10).h(41).pt(14).pb(5).flex_none().items_center().justify_between()
+        .child(div().text_size(11.5).font_medium().text_color(t.dim).child("Context"))
+        .child(this.minimizeButton(t)))
+      .when(!isMinimized(ownBlock(layout())), (el) => el.child(v_flex().id("ctx-list").flex_1().min_h(0).px(8).gap(2).overflow_y_scrollbar().children(rows)))
       .when(this.error, (el) => el.child(div().px(16).py(4).text_size(11).text_color(t.working).child(this.error)));
   }
 }
