@@ -1,6 +1,6 @@
 # herdr-claude-context
 
-A [Herdr.app](https://herdr.app) sidebar mod showing the **context-window usage of your Claude Code agents**.
+A Herdr.app sidebar mod showing the **context-window usage of your Claude Code agents**.
 
 - One row per agent: title, % used, a progress bar and `used / window` tokens.
 - A **compact** button that types `/compact` into the agent (enabled only when it is `idle` or `done`), with a spinner while it compacts.
