@@ -57,6 +57,19 @@ export default class ClaudeContext extends View {
     });
   }
 
+  compact(a, used, cx) {
+    this.compacting[a.address] = { at: Date.now(), used };
+    cx.notify();
+    const fail = (msg) => {
+      delete this.compacting[a.address];
+      this.error = `compact ${a.address}: ` + String(msg).slice(0, 160);
+      cx.notify();
+    };
+    hc(["keys", a.address, ..."/compact".split(""), "enter"])
+      .then((r) => { if (r.code !== 0) fail(r.stderr || r.stdout || `exit ${r.code}`); })
+      .catch(fail);
+  }
+
   render(cx) {
     const t = theme();
     const cwdOf = {};
@@ -70,40 +83,31 @@ export default class ClaudeContext extends View {
       const busy = !!this.compacting[a.address];
       const spin = SPIN[this.tick % SPIN.length];
       const canCompact = !busy && s && (a.status === "idle" || a.status === "done");
-      return v_flex().gap(4).px(12).py(6)
-        .hover((st) => st.bg(t.raised))
-        .child(h_flex().gap(6).items_center()
-          .child(div().id(`r-${a.address}`).cursor_pointer().flex_1().text_color(t.foreground).truncate()
-            .on_click(() => run("pane.focus", { pane: a.pane }))
-            .child(clean(a.title) || a.program?.name || "agent"))
-          .child(div().text_size(11).text_color(color).child(pct == null ? "no data" : `${pct.toFixed(0)}%`))
-          .child(div().id(`c-${a.address}`).text_size(11).px(6).py(1).rounded(4).border(1)
-            .border_color(canCompact ? t.border : t.raised)
-            .text_color(canCompact ? t.muted : t.dim)
-            .when(canCompact, (el) => el.cursor_pointer().hover((st) => st.bg(t.hover)).on_click((_e, cx) => {
-              this.compacting[a.address] = { at: Date.now(), used: s.used };
-              cx.notify();
-              hc(["keys", a.address, ..."/compact".split(""), "enter"]).then((r) => {
-                if (r.code !== 0) {
-                  delete this.compacting[a.address];
-                  this.error = `compact ${a.address}: ` + (r.stderr || r.stdout || `exit ${r.code}`).slice(0, 160);
-                  cx.notify();
-                }
-              }).catch((e) => {
-                delete this.compacting[a.address];
-                this.error = `compact ${a.address}: ` + String(e).slice(0, 160);
-                cx.notify();
-              });
-            }))
+      return v_flex().id(`row-${a.address}`).flex_none().gap(5).px(8).py(6).rounded(8).cursor_pointer()
+        .when(a.focused, (el) => el.bg(t.selected))
+        .hover((st) => st.bg(t.hover))
+        .on_click(() => run("pane.focus", { pane: a.pane }))
+        .child(h_flex().h(18).gap(9).items_center()
+          .child(div().flex_1().min_w(0).truncate().text_color(t.foreground).child(clean(a.title) || a.program?.name || "agent"))
+          .child(div().flex_none().text_size(11).text_color(pct == null || pct < 60 ? t.dim : color).child(pct == null ? "no data" : `${pct.toFixed(0)}%`))
+          .child(h_flex().id(`c-${a.address}`).flex_none().h(18).px(6).rounded(5).items_center().text_size(10.5).font_semibold()
+            .bg(busy ? t.blocked + "26" : t.raised)
+            .text_color(busy ? t.blocked : canCompact ? t.muted : t.dim)
+            .when(canCompact, (el) => el.cursor_pointer().hover((st) => st.bg(t.hover).text_color(t.foreground)))
+            .on_click((_e, cx) => {
+              cx.stop_propagation();
+              if (canCompact) this.compact(a, s.used, cx);
+            })
             .child(busy ? `${spin} compacting` : "compact")))
-        .child(div().w_full().h(5).rounded(3).bg(t.border)
-          .child(div().h(5).rounded(3).bg(busy ? t.blocked : color).w(pct == null ? 0 : `${pct}%`)))
+        .child(div().w_full().h(3).rounded(2).bg(t.border)
+          .child(div().h(3).rounded(2).bg(busy ? t.blocked : color).w(pct == null ? 0 : `${pct}%`)))
         .child(div().text_size(11).text_color(t.dim).truncate()
           .child(`${a.space_name}` + (s && s.used != null ? `  ·  ${fmt(s.used)} / ${fmt(s.window)}` : "")));
     });
-    return v_flex().size_full().py(8).gap(2).text_size(13)
-      .child(div().text_size(11).text_color(t.dim).px(12).pb(4).child("Context"))
-      .children(rows)
-      .when(this.error, (el) => el.child(div().text_size(11).text_color(t.working).child(this.error)));
+    return v_flex().size_full().min_h(0).bg(t.chrome).border_t(1).border_color(t.border).text_size(13)
+      .child(h_flex().px(16).h(41).pt(14).pb(5).flex_none().items_center().justify_between()
+        .child(div().text_size(11.5).font_medium().text_color(t.dim).child("Context")))
+      .child(v_flex().id("ctx-list").flex_1().min_h(0).px(8).gap(2).overflow_y_scrollbar().children(rows))
+      .when(this.error, (el) => el.child(div().px(16).py(4).text_size(11).text_color(t.working).child(this.error)));
   }
 }

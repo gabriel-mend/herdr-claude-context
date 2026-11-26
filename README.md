@@ -5,6 +5,7 @@
 A Herdr.app sidebar mod showing the **context-window usage of your Claude Code agents**.
 
 - One row per agent: title, % used, a progress bar and `used / window` tokens.
+- Click a row to focus that agent; the focused one is highlighted, like Herdr's Agents list.
 - A **compact** button that types `/compact` into the agent (enabled only when it is `idle` or `done`), with a spinner while it compacts.
 - Works across account profiles created by [herdr-claude-accounts](https://github.com/gabriel-mend/herdr-claude-accounts) (optional).
 
@@ -53,7 +54,7 @@ Then add the blocks to a personal layout. Shipped layouts are read-only, so clon
 ```json
 { "id": "claude-context",    "type": "block", "size": { "weight": 1 }, "min": 90, "content": { "mod": "claude-context" } },
 { "id": "claude-accounts",   "type": "block", "size": { "px": 150 },  "min": 60, "content": { "mod": "claude-accounts" } },
-{ "id": "claude-plan-usage", "type": "block", "size": { "px": 78 },   "min": 60, "content": { "mod": "claude-plan-usage" } }
+{ "id": "claude-plan-usage", "type": "block", "size": { "px": 96 },   "min": 60, "content": { "mod": "claude-plan-usage" } }
 ```
 
 Switch to it with `herdr-app do layout.switch --name <your-layout>`. Changing to a layout without these blocks hides the mods.
@@ -78,6 +79,17 @@ Add it as a block in a personal layout (shipped layouts are read-only: `layout.c
 Compaction uses `hc keys` instead of `hc send`: `send` wraps text as a message from another terminal, and Claude Code would not run it as a slash command.
 
 Profiles come from `~/.claude/state/herdr-accounts.json` when present; otherwise only `~/.claude` is read.
+
+## Tests
+
+No dependencies to install: Python 3 (`unittest`) and Node 20.6+ (`node --test`). From the repository folder:
+
+```sh
+python3 -m unittest discover -s tests
+node --test tests/mod.test.mjs
+```
+
+The Node tests load `main.js` with fake Herdr modules (`tests/stubs.mjs`) and check what is shown and what each click does. They don't test how it looks; for that, run `herdr-app check` and look at the app.
 
 ## Author
 
