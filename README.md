@@ -78,3 +78,7 @@ Add it as a block in a personal layout (shipped layouts are read-only: `layout.c
 Compaction uses `hc keys` instead of `hc send`: `send` wraps text as a message from another terminal, and Claude Code would not run it as a slash command.
 
 Profiles come from `~/.claude/state/herdr-accounts.json` when present; otherwise only `~/.claude` is read.
+
+## License
+
+[MIT](LICENSE) © 2026 [Gabriel Mendonça Pereira](https://github.com/gabriel-mend) · [LinkedIn](https://www.linkedin.com/in/gabriel-mendonca-pereira/)
